@@ -264,16 +264,24 @@ struct MenuBarView: View {
 struct MenuBarLabel: View {
     @ObservedObject private var controller = ControllerManager.shared
     @ObservedObject private var engine     = MappingEngine.shared
+    @State private var eggPulse = false
 
     var body: some View {
         HStack(spacing: 4) {
             Image(systemName: engine.isEnabled ? "gamecontroller.fill" : "gamecontroller")
                 .opacity(engine.isEnabled ? 1 : 0.5)
+                .hueRotation(.degrees(eggPulse ? 360 : 0))
             if controller.isConnected && controller.supportsBattery {
                 Image(systemName: controller.batteryIcon)
                     .foregroundStyle(controller.batteryColor)
             }
         }
         .symbolRenderingMode(.hierarchical)
+        .onReceive(NotificationCenter.default.publisher(for: .controllerMapperEasterEgg)) { _ in
+            withAnimation(.linear(duration: 1.3)) { eggPulse = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
+                eggPulse = false
+            }
+        }
     }
 }

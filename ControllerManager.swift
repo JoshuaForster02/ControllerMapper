@@ -42,6 +42,12 @@ final class ControllerManager: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     private init() {
+        // Without this, macOS only delivers controller input to whichever
+        // app is currently frontmost/key. Since this app spends almost all
+        // its life as a backgrounded menu bar accessory (no window open),
+        // mapping would silently stop working the moment the window closes.
+        GCController.shouldMonitorBackgroundEvents = true
+
         self.bluetoothDeviceAddress = UserDefaults.standard.string(forKey: "cm_bt_device_address")
         if let raw = UserDefaults.standard.string(forKey: "cm_manual_style") {
             self.manualVisualStyle = ControllerVisualStyle(rawValue: raw)

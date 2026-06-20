@@ -24,9 +24,9 @@ struct MappingDetailView: View {
             .padding(DS.spacingL)
         }
         .onAppear { action = profile.mappings[button] ?? .none }
-        .onChange(of: button) {
+        .onChange(of: button) { _, newButton in
             withAnimation(.easeInOut(duration: 0.15)) {
-                action = profile.mappings[$1] ?? .none
+                action = profile.mappings[newButton] ?? .none
             }
         }
         .onChange(of: action) { saveAction($1) }

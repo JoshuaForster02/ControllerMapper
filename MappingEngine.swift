@@ -76,6 +76,7 @@ final class MappingEngine: ObservableObject {
         if konamiProgress.count == konamiSequence.count {
             konamiProgress.removeAll()
             DispatchQueue.main.async {
+                EasterEgg.konami.unlock()
                 NotificationCenter.default.post(name: .controllerMapperEasterEgg, object: nil)
             }
         }

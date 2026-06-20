@@ -11,6 +11,60 @@ extension Notification.Name {
     static let controllerMapperProfileSwitched = Notification.Name("cm.profileSwitchedViaController")
 }
 
+// MARK: - Easter Eggs (persisted achievements)
+
+/// Once found, an easter egg stays "unlocked" forever (shown in the About
+/// window) instead of just flashing once and being forgotten.
+enum EasterEgg: String, CaseIterable {
+    case konami
+    case hiddenBadge
+
+    var title: String {
+        switch self {
+        case .konami:      return "Retro Combo"
+        case .hiddenBadge: return "Curious Clicker"
+        }
+    }
+
+    /// Shown while still locked — a hint without giving it away outright.
+    var hint: String {
+        switch self {
+        case .konami:      return "Try a classic button combo on your controller."
+        case .hiddenBadge: return "Something in this window responds to repeated clicking."
+        }
+    }
+
+    /// Shown once unlocked.
+    var unlockedDescription: String {
+        switch self {
+        case .konami:      return "Found the ↑↑↓↓←←→→ B A combo."
+        case .hiddenBadge: return "Clicked the icon until something happened."
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .konami:      return "gamecontroller.fill"
+        case .hiddenBadge: return "hand.tap.fill"
+        }
+    }
+
+    private var key: String { "cm_egg_\(rawValue)_found" }
+
+    var isUnlocked: Bool {
+        UserDefaults.standard.bool(forKey: key)
+    }
+
+    /// Returns `true` the first time this egg is unlocked (so callers can
+    /// fire celebratory feedback only once, not on every repeat trigger).
+    @discardableResult
+    func unlock() -> Bool {
+        guard !isUnlocked else { return false }
+        UserDefaults.standard.set(true, forKey: key)
+        return true
+    }
+}
+
 // MARK: - Controller Visual Style
 
 /// Adapts the on-screen diamond (face buttons) to match what's actually

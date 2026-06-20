@@ -85,6 +85,16 @@ struct ConfettiOverlay: View {
     private let colors: [Color] = [.red, .orange, .yellow, .green, .blue, .purple, .pink]
     @State private var animate = false
 
+    private static let messages: [String] = [
+        "Turbo mode... engaged? (not really, but nice combo)",
+        "You've clearly done this before.",
+        "Achievement unlocked: muscle memory.",
+        "Somewhere, an old arcade cabinet just felt a disturbance.",
+        "+0 stats. +1 vibe.",
+        "Konami would be proud."
+    ]
+    private let message = ConfettiOverlay.messages.randomElement()!
+
     private struct Piece: Identifiable {
         let id = UUID()
         let x: CGFloat
@@ -121,7 +131,7 @@ struct ConfettiOverlay: View {
             VStack(spacing: 4) {
                 Text("🎮 Secret found!")
                     .font(.headline)
-                Text("Turbo mode... engaged? (not really, but nice combo)")
+                Text(message)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

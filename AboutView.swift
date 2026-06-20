@@ -5,6 +5,7 @@ struct AboutView: View {
 
     @State private var iconTapCount = 0
     @State private var showHiddenBadge = false
+    @State private var justUnlockedBadge = false
 
     private var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -38,8 +39,8 @@ struct AboutView: View {
             }
             .shadow(color: Color.accentColor.opacity(0.4), radius: 12, y: 6)
             .padding(.top, 8)
-            .rotationEffect(.degrees(showHiddenBadge ? 360 : 0))
-            .animation(.easeOut(duration: 0.6), value: showHiddenBadge)
+            .rotationEffect(.degrees(justUnlockedBadge ? 360 : 0))
+            .animation(.easeOut(duration: 0.6), value: justUnlockedBadge)
             .contentShape(Circle())
             .onTapGesture { registerIconTap() }
 
@@ -73,6 +74,8 @@ struct AboutView: View {
 
             Divider()
 
+            achievementsSection
+
             permissionsSection
 
             Button {
@@ -98,7 +101,55 @@ struct AboutView: View {
             }
         }
         .sheetContainer(width: 360)
-        .frame(height: 500)
+        .frame(height: 560)
+        .onAppear {
+            // Badges are permanent achievements — restore unlock state instead
+            // of resetting it every time this window opens.
+            showHiddenBadge = EasterEgg.hiddenBadge.isUnlocked
+        }
+    }
+
+    private var achievementsSection: some View {
+        VStack(alignment: .leading, spacing: DS.spacingS) {
+            Text("Achievements").sectionEyebrow()
+
+            VStack(spacing: 6) {
+                ForEach(EasterEgg.allCases, id: \.self) { egg in
+                    achievementRow(egg)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func achievementRow(_ egg: EasterEgg) -> some View {
+        let unlocked = egg.isUnlocked
+        return HStack(spacing: 10) {
+            Image(systemName: unlocked ? egg.symbol : "lock.fill")
+                .font(.caption)
+                .foregroundStyle(unlocked ? Color.yellow : .secondary)
+                .frame(width: 18)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(unlocked ? egg.title : "???")
+                    .font(.caption.weight(.semibold))
+                Text(unlocked ? egg.unlockedDescription : egg.hint)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 0)
+
+            if unlocked {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                    .font(.caption)
+            }
+        }
+        .padding(.horizontal, DS.spacingS)
+        .padding(.vertical, 6)
+        .cardSurface(radius: DS.radiusSmall)
+        .opacity(unlocked ? 1 : 0.7)
     }
 
     private var permissionsSection: some View {
@@ -129,7 +180,8 @@ struct AboutView: View {
 
     private func registerIconTap() {
         iconTapCount += 1
-        if iconTapCount >= 7 {
+        if iconTapCount >= 7 && EasterEgg.hiddenBadge.unlock() {
+            justUnlockedBadge = true
             withAnimation(.spring(response: 0.5, dampingFraction: 0.6)) {
                 showHiddenBadge = true
             }
