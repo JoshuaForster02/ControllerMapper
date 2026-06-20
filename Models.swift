@@ -1,6 +1,16 @@
 import Foundation
 import SwiftUI
 
+// MARK: - Notifications
+
+extension Notification.Name {
+    /// Posted when the Konami-style button combo is detected.
+    static let controllerMapperEasterEgg = Notification.Name("cm.easterEgg")
+    /// Posted when a profile is switched via the controller's hold-shortcut.
+    /// `object` is the new `Profile`.
+    static let controllerMapperProfileSwitched = Notification.Name("cm.profileSwitchedViaController")
+}
+
 // MARK: - Controller Buttons
 
 enum ControllerButton: String, CaseIterable, Codable, Hashable {

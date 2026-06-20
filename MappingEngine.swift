@@ -19,6 +19,22 @@ final class MappingEngine: ObservableObject {
         didSet { UserDefaults.standard.set(isEnabled, forKey: "cm_mapping_enabled") }
     }
 
+    // MARK: - Easter Egg: Konami Code
+    // ↑ ↑ ↓ ↓ ← ← → → B A — a classic. Works even while mapping is paused.
+
+    private let konamiSequence: [ControllerButton] = [
+        .dUp, .dUp, .dDown, .dDown, .dLeft, .dLeft, .dRight, .dRight, .b, .a
+    ]
+    private var konamiProgress: [ControllerButton] = []
+    private var lastKonamiInputTime: Date = .distantPast
+
+    // MARK: - Controller Shortcut: Hold View+Menu to cycle profiles
+
+    private var viewHeld = false
+    private var menuHeld = false
+    private var profileHoldTimer: Timer?
+    private var profileHoldTriggered = false
+
     private init() {
         isEnabled = UserDefaults.standard.object(forKey: "cm_mapping_enabled") as? Bool ?? true
         wireCallbacks()
@@ -31,10 +47,66 @@ final class MappingEngine: ObservableObject {
         // Digital buttons
         for button in ControllerButton.allCases where !button.isAxis {
             controller.buttonCallbacks[button] = { [weak self] pressed in
+                self?.detectKonamiCode(button, pressed: pressed)
+                self?.detectProfileHoldShortcut(button, pressed: pressed)
                 self?.handleButton(button, pressed: pressed)
             }
         }
         // Axes handled in movement timer loop via raw stick values
+    }
+
+    // MARK: - Easter Egg Detection
+
+    private func detectKonamiCode(_ button: ControllerButton, pressed: Bool) {
+        guard pressed else { return }   // only count press edges
+
+        let now = Date()
+        if now.timeIntervalSince(lastKonamiInputTime) > 3.0 {
+            konamiProgress.removeAll()
+        }
+        lastKonamiInputTime = now
+
+        let expectedIndex = konamiProgress.count
+        guard expectedIndex < konamiSequence.count, button == konamiSequence[expectedIndex] else {
+            konamiProgress = (button == konamiSequence[0]) ? [button] : []
+            return
+        }
+
+        konamiProgress.append(button)
+        if konamiProgress.count == konamiSequence.count {
+            konamiProgress.removeAll()
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .controllerMapperEasterEgg, object: nil)
+            }
+        }
+    }
+
+    private func detectProfileHoldShortcut(_ button: ControllerButton, pressed: Bool) {
+        if button == .view { viewHeld = pressed }
+        if button == .menu { menuHeld = pressed }
+
+        if viewHeld && menuHeld {
+            guard profileHoldTimer == nil else { return }
+            DispatchQueue.main.async { [weak self] in
+                self?.profileHoldTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { _ in
+                    self?.cycleProfileViaController()
+                }
+            }
+        } else {
+            profileHoldTimer?.invalidate()
+            profileHoldTimer = nil
+            profileHoldTriggered = false
+        }
+    }
+
+    private func cycleProfileViaController() {
+        profileHoldTriggered = true
+        let list = profiles.profiles
+        guard list.count > 1 else { return }
+        let currentIndex = list.firstIndex(where: { $0.id == profiles.activeProfileID }) ?? 0
+        let next = list[(currentIndex + 1) % list.count]
+        profiles.activate(next)
+        NotificationCenter.default.post(name: .controllerMapperProfileSwitched, object: next)
     }
 
     // MARK: - Button Handler

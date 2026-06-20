@@ -3,6 +3,9 @@ import SwiftUI
 struct AboutView: View {
     @Environment(\.dismiss) private var dismiss
 
+    @State private var iconTapCount = 0
+    @State private var showHiddenBadge = false
+
     private var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
     }
@@ -35,6 +38,10 @@ struct AboutView: View {
             }
             .shadow(color: Color.accentColor.opacity(0.4), radius: 12, y: 6)
             .padding(.top, 8)
+            .rotationEffect(.degrees(showHiddenBadge ? 360 : 0))
+            .animation(.easeOut(duration: 0.6), value: showHiddenBadge)
+            .contentShape(Circle())
+            .onTapGesture { registerIconTap() }
 
             VStack(spacing: 4) {
                 Text("ControllerMapper")
@@ -44,12 +51,25 @@ struct AboutView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Text("Mappt Xbox-kompatible Controller (z. B. ShanWan-Klone) auf Tastatur, Maus und Macros — mit mehreren Profilen und Akku-Anzeige.")
-                .font(.callout)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 8)
+            if showHiddenBadge {
+                HStack(spacing: 6) {
+                    Image(systemName: "trophy.fill")
+                        .foregroundStyle(.yellow)
+                    Text("Hidden badge unlocked — thanks for clicking around!")
+                        .font(.caption2.weight(.medium))
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(Capsule().fill(Color.yellow.opacity(0.15)))
+                .transition(.scale.combined(with: .opacity))
+            } else {
+                Text("Maps Xbox-compatible controllers (incl. ShanWan clones) to keyboard, mouse, and macros — with multiple profiles and a live battery indicator.")
+                    .font(.callout)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 8)
+            }
 
             Divider()
 
@@ -105,6 +125,15 @@ struct AboutView: View {
             }
         }
         .frame(maxWidth: .infinity)
+    }
+
+    private func registerIconTap() {
+        iconTapCount += 1
+        if iconTapCount >= 7 {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.6)) {
+                showHiddenBadge = true
+            }
+        }
     }
 }
 

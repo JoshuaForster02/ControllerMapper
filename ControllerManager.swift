@@ -12,6 +12,10 @@ final class ControllerManager: ObservableObject {
     @Published var batteryPercent: Int = 0
     @Published var isCharging: Bool = false
 
+    /// Buttons currently held down — purely visual, drives the live glow
+    /// on the controller diagram regardless of what's mapped/selected.
+    @Published var pressedButtons: Set<ControllerButton> = []
+
     /// User-selected paired Bluetooth device used as a battery fallback for
     /// controllers that don't expose battery through GCController at all.
     @Published var bluetoothDeviceAddress: String? {
@@ -159,6 +163,7 @@ final class ControllerManager: ObservableObject {
         for button in ControllerButton.allCases where !button.isAxis {
             guard let input = btn(button) else { continue }
             input.pressedChangedHandler = { [weak self] _, _, pressed in
+                self?.setPressed(button, pressed)
                 self?.buttonCallbacks[button]?(pressed)
             }
         }
@@ -169,14 +174,20 @@ final class ControllerManager: ObservableObject {
             let wasPressed = (self?.leftTrigger ?? 0) > 0.5
             self?.leftTrigger = value
             self?.axisCallbacks[.lt]?(value)
-            if pressed != wasPressed { self?.buttonCallbacks[.lt]?(pressed) }
+            if pressed != wasPressed {
+                self?.setPressed(.lt, pressed)
+                self?.buttonCallbacks[.lt]?(pressed)
+            }
         }
         gp.rightTrigger.valueChangedHandler = { [weak self] _, value, _ in
             let pressed = value > 0.5
             let wasPressed = (self?.rightTrigger ?? 0) > 0.5
             self?.rightTrigger = value
             self?.axisCallbacks[.rt]?(value)
-            if pressed != wasPressed { self?.buttonCallbacks[.rt]?(pressed) }
+            if pressed != wasPressed {
+                self?.setPressed(.rt, pressed)
+                self?.buttonCallbacks[.rt]?(pressed)
+            }
         }
 
         // Sticks
@@ -189,6 +200,18 @@ final class ControllerManager: ObservableObject {
             self?.rightStick = CGPoint(x: CGFloat(x), y: CGFloat(y))
             self?.axisCallbacks[.rightStickX]?(x)
             self?.axisCallbacks[.rightStickY]?(y)
+        }
+    }
+
+    // MARK: - Live Press State (visual only)
+
+    private func setPressed(_ button: ControllerButton, _ pressed: Bool) {
+        DispatchQueue.main.async {
+            if pressed {
+                self.pressedButtons.insert(button)
+            } else {
+                self.pressedButtons.remove(button)
+            }
         }
     }
 

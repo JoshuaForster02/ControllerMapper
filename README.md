@@ -33,6 +33,9 @@ If you searched for *"ShanWan controller Mac driver"*, *"map Xbox controller to 
 - 🧪 **Test button** — fire any mapped action once, without touching the controller
 - 🔍 Searchable button list, About panel with live permission status
 - 🚀 Launches at login, lives quietly in the menu bar
+- ✨ **Live press glow** — the on-screen controller lights up in real time as you press physical buttons
+- 🎮 **Controller-only profile switching** — hold **View + Menu** for a second to cycle profiles without touching your Mac
+- 🕹️ A couple of easter eggs are hiding in there. Try the classic ↑↑↓↓←←→→ B A combo on the controller.
 
 ## Screenshot
 
@@ -68,6 +71,18 @@ Yes, if you haven't selected a Team in Signing & Capabilities. Without a stable 
 
 **My controller shows up but battery says "not reported".**
 Common with clones — they don't implement the HID battery report `GCController` reads. If it's paired over real Bluetooth, use the in-app "Bluetooth Battery" picker to read the battery level macOS already tracks. Over USB or a 2.4 GHz dongle there's no system-level battery source, unfortunately.
+
+**Does this work with emulators like Dolphin?**
+Likely yes, with no extra setup. ControllerMapper maps controller buttons to regular keyboard keys, and Dolphin (like most emulators) lets you bind its virtual GameCube/Wii controller to keyboard keys in its own input settings. Map your buttons in ControllerMapper, then bind those same keys inside Dolphin's controller config. If you hit a snag, please open an issue.
+
+## Roadmap
+
+Ideas being considered, not yet started:
+
+- **Virtual gamepad driver** (DS4Windows-style) — would let the controller appear as a native virtual gamepad to apps that don't accept keyboard input, instead of (or alongside) key remapping. On macOS this requires a DriverKit system extension, which needs a paid Apple Developer Program membership and a separate driver-entitlement request from Apple — a much bigger undertaking than the app itself.
+- **Windows version** — not a port (SwiftUI/AppKit/GameController.framework are Apple-only), but a ground-up rewrite using XInput/DirectInput and SendInput, most likely in C#/WPF.
+
+Interested in either? Open an issue or a PR — contributions welcome.
 
 **Why no App Store version?** <a name="why-no-app-store-version"></a>
 The app injects keyboard/mouse events system-wide via `CGEventPost`, which requires running **without App Sandbox** — and Sandbox is mandatory for the App Store. This will ship as a Developer ID–signed direct download instead.

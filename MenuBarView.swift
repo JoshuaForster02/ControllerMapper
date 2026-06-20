@@ -7,6 +7,9 @@ struct MenuBarView: View {
     @ObservedObject private var engine     = MappingEngine.shared
     @Environment(\.openWindow) private var openWindow
 
+    @State private var showEasterEgg = false
+    @State private var toastText: String?
+
     private var activeColor: Color {
         profiles.activeProfile?.swiftUIColor ?? .accentColor
     }
@@ -29,6 +32,39 @@ struct MenuBarView: View {
             RoundedRectangle(cornerRadius: 18)
                 .stroke(.white.opacity(0.08), lineWidth: 1)
         )
+        .overlay {
+            if showEasterEgg {
+                ConfettiOverlay()
+                    .allowsHitTesting(false)
+            }
+        }
+        .overlay(alignment: .top) {
+            if let text = toastText {
+                Text(text)
+                    .font(.caption.weight(.semibold))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(.black.opacity(0.75), in: Capsule())
+                    .foregroundStyle(.white)
+                    .padding(.top, 8)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .controllerMapperEasterEgg)) { _ in
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { showEasterEgg = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.6) {
+                withAnimation(.easeOut(duration: 0.5)) { showEasterEgg = false }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .controllerMapperProfileSwitched)) { note in
+            guard let profile = note.object as? Profile else { return }
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                toastText = "🎮 Switched to \(profile.name)"
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
+                withAnimation { toastText = nil }
+            }
+        }
     }
 
     // MARK: - Header

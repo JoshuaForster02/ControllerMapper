@@ -5,6 +5,23 @@ struct ControllerLayoutView: View {
     @Binding var selectedButton: ControllerButton?
     let profile: Profile
 
+    @ObservedObject private var liveController = ControllerManager.shared
+
+    private func isLivePressed(_ btn: ControllerButton) -> Bool {
+        liveController.pressedButtons.contains(btn)
+    }
+
+    /// Subtle white glow + scale bump applied on top of a button while it's
+    /// physically held — purely cosmetic, independent of selection/mapping.
+    private func pressGlow(_ btn: ControllerButton) -> some View {
+        let pressed = isLivePressed(btn)
+        return Circle()
+            .stroke(.white.opacity(pressed ? 0.9 : 0), lineWidth: 2)
+            .scaleEffect(pressed ? 1.25 : 1.0)
+            .animation(.easeOut(duration: 0.12), value: pressed)
+            .allowsHitTesting(false)
+    }
+
     // Controller body size (scales with frame)
     private let W: CGFloat = 520
     private let H: CGFloat = 310
@@ -144,6 +161,9 @@ struct ControllerLayoutView: View {
                     Circle()
                         .stroke(selectedButton == btn ? Color.accentColor : Color.clear, lineWidth: 2)
                 )
+                .overlay(pressGlow(btn))
+                .scaleEffect(isLivePressed(btn) ? 1.2 : 1.0)
+                .animation(.easeOut(duration: 0.1), value: isLivePressed(btn))
         }
         .buttonStyle(.plain)
         .offset(x: pos.x, y: pos.y)
@@ -193,7 +213,11 @@ struct ControllerLayoutView: View {
                         .frame(width: 6, height: 6)
                         .offset(x: 9, y: -9)
                 }
+
+                pressGlow(btn).frame(width: 28, height: 28)
             }
+            .scaleEffect(isLivePressed(btn) ? 1.12 : 1.0)
+            .animation(.easeOut(duration: 0.1), value: isLivePressed(btn))
         }
         .buttonStyle(.plain)
         .offset(x: pos.x, y: pos.y)
@@ -289,6 +313,9 @@ struct ControllerLayoutView: View {
                         .font(.system(size: 12, weight: .bold))
                         .foregroundStyle(.white.opacity(0.9))
                 )
+                .overlay(pressGlow(btn))
+                .scaleEffect(isLivePressed(btn) ? 1.15 : 1.0)
+                .animation(.easeOut(duration: 0.1), value: isLivePressed(btn))
         }
         .buttonStyle(.plain)
     }
@@ -304,11 +331,15 @@ struct ControllerLayoutView: View {
             selectedButton = btn
         } label: {
             RoundedRectangle(cornerRadius: 5)
-                .fill(selectedButton == btn
-                      ? Color.accentColor.opacity(0.3)
-                      : Color(.sRGB, red: 0.14, green: 0.14, blue: 0.16, opacity: 1))
+                .fill(isLivePressed(btn)
+                      ? Color.white.opacity(0.25)
+                      : selectedButton == btn
+                          ? Color.accentColor.opacity(0.3)
+                          : Color(.sRGB, red: 0.14, green: 0.14, blue: 0.16, opacity: 1))
                 .frame(width: size.width, height: size.height)
                 .overlay(label())
+                .scaleEffect(isLivePressed(btn) ? 1.06 : 1.0)
+                .animation(.easeOut(duration: 0.1), value: isLivePressed(btn))
                 .overlay(
                     RoundedRectangle(cornerRadius: 5)
                         .stroke(selectedButton == btn ? Color.accentColor : Color.white.opacity(0.08),
