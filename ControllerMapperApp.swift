@@ -1,5 +1,6 @@
 import SwiftUI
 import ServiceManagement
+import UserNotifications
 
 @main
 struct ControllerMapperApp: App {
@@ -39,6 +40,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Register as login item (macOS 13+)
         try? SMAppService.mainApp.register()
+
+        // Request permission for the Konami-code easter egg notification.
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+        NotificationCenter.default.addObserver(
+            forName: .controllerMapperEasterEgg, object: nil, queue: .main
+        ) { _ in
+            let content = UNMutableNotificationContent()
+            content.title = "🎮 Secret found!"
+            content.body = "↑↑↓↓←←→→ B A — nice combo. Turbo mode... engaged? (not really, but still nice)"
+            content.sound = .default
+            let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
+            UNUserNotificationCenter.current().add(request)
+        }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {

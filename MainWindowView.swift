@@ -34,6 +34,7 @@ struct MainWindowView: View {
     var body: some View {
         NavigationSplitView(columnVisibility: .constant(.all)) {
             profileSidebar
+                .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 300)
         } detail: {
             if let id = selectedProfileID,
                let profile = profiles.profiles.first(where: { $0.id == id }) {
@@ -166,7 +167,8 @@ struct MainWindowView: View {
                         profile: activeProfile,
                         profileID: profile.id
                     )
-                    .frame(minWidth: 300, maxWidth: 380)
+                    .frame(minWidth: 320, idealWidth: 360, maxWidth: 460)
+                    .transition(.opacity)
                 } else {
                     VStack(spacing: 12) {
                         Image(systemName: "hand.tap.fill")
@@ -176,9 +178,10 @@ struct MainWindowView: View {
                             .foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .frame(minWidth: 300, maxWidth: 380)
+                    .frame(minWidth: 320, idealWidth: 360, maxWidth: 460)
                 }
             }
+            .animation(.easeInOut(duration: 0.18), value: selectedButton)
         }
     }
 
@@ -242,15 +245,25 @@ struct MainWindowView: View {
                     }
                 }
 
+                // Design picker (auto-detected, but switchable)
+                designPicker
+
                 // Connection status
                 HStack(spacing: 5) {
                     Circle()
                         .fill(controller.isConnected ? Color.green : Color.secondary)
                         .frame(width: 6, height: 6)
                         .shadow(color: controller.isConnected ? .green.opacity(0.6) : .clear, radius: 3)
-                    Text(controller.isConnected ? controller.controllerName : "Nicht verbunden")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    VStack(alignment: .trailing, spacing: 0) {
+                        Text(controller.isConnected ? controller.controllerName : "Nicht verbunden")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        if controller.isConnected && !controller.productCategory.isEmpty {
+                            Text(controller.productCategory)
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
                 }
             }
             .padding(.horizontal, 20)
@@ -274,6 +287,32 @@ struct MainWindowView: View {
             .frame(height: 240)
             .animation(.easeInOut(duration: 0.4), value: profile.id)
         }
+    }
+
+    private var designPicker: some View {
+        Menu {
+            Button {
+                controller.manualVisualStyle = nil
+            } label: {
+                Label("Automatisch", systemImage: controller.manualVisualStyle == nil ? "checkmark" : "")
+            }
+            Divider()
+            ForEach(ControllerVisualStyle.allCases, id: \.self) { style in
+                Button {
+                    controller.manualVisualStyle = style
+                } label: {
+                    Label(style.displayName, systemImage: controller.manualVisualStyle == style ? "checkmark" : "")
+                }
+            }
+        } label: {
+            Label(
+                controller.manualVisualStyle == nil ? "Design: Auto" : "Design: \(controller.manualVisualStyle!.displayName)",
+                systemImage: "paintpalette"
+            )
+            .font(.caption)
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
     }
 
     private var filteredButtons: [ControllerButton] {
@@ -409,6 +448,7 @@ struct NewProfileSheet: View {
     @State private var name: String = "New Profile"
     @State private var colorHex: String = "#007AFF"
     @State private var icon: String = "gamecontroller.fill"
+    @State private var basePreset: Profile?
     @Environment(\.dismiss) private var dismiss
 
     let icons = ["gamecontroller.fill", "bolt.fill", "star.fill", "flame.fill",
@@ -416,15 +456,24 @@ struct NewProfileSheet: View {
     let colors = ["#007AFF", "#34C759", "#FF3B30", "#FF9500", "#AF52DE", "#5AC8FA", "#FFD60A", "#FF2D55"]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("New Profile")
-                .font(.title2.bold())
+        VStack(alignment: .leading, spacing: DS.spacingL) {
+            SheetHeader(title: "New Profile", systemImage: "plus.circle.fill")
+
+            VStack(alignment: .leading, spacing: DS.spacingS) {
+                Text("START FROM").sectionEyebrow()
+                HStack(spacing: 8) {
+                    presetChip(nil, label: "Blank", symbol: "doc")
+                    ForEach(Profile.builtInPresets) { preset in
+                        presetChip(preset, label: preset.name, symbol: preset.icon)
+                    }
+                }
+            }
 
             TextField("Profile name", text: $name)
                 .textFieldStyle(.roundedBorder)
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Color").font(.subheadline)
+                Text("COLOR").sectionEyebrow()
                 HStack {
                     ForEach(colors, id: \.self) { hex in
                         Button {
@@ -444,7 +493,7 @@ struct NewProfileSheet: View {
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Icon").font(.subheadline)
+                Text("ICON").sectionEyebrow()
                 LazyVGrid(columns: Array(repeating: GridItem(.fixed(36)), count: 5), spacing: 8) {
                     ForEach(icons, id: \.self) { sf in
                         Button {
@@ -471,7 +520,11 @@ struct NewProfileSheet: View {
                 Button("Cancel", role: .cancel) { dismiss() }
                 Spacer()
                 Button("Create") {
-                    let p = Profile(name: name, colorHex: colorHex, icon: icon)
+                    var p = basePreset ?? Profile()
+                    p.id = UUID()
+                    p.name = name
+                    p.colorHex = colorHex
+                    p.icon = icon
                     onCreate(p)
                     dismiss()
                 }
@@ -479,7 +532,35 @@ struct NewProfileSheet: View {
                 .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }
-        .padding(24)
-        .frame(width: 320)
+        .sheetContainer(width: DS.sheetWidthCompact)
+    }
+
+    private func presetChip(_ preset: Profile?, label: String, symbol: String) -> some View {
+        let isSelected = basePreset?.id == preset?.id
+        return Button {
+            basePreset = preset
+            name = preset?.name ?? "New Profile"
+            colorHex = preset?.colorHex ?? "#007AFF"
+            icon = preset?.icon ?? "gamecontroller.fill"
+        } label: {
+            VStack(spacing: 4) {
+                Image(systemName: symbol)
+                    .font(.body)
+                Text(label)
+                    .font(.caption2)
+                    .lineLimit(1)
+            }
+            .frame(width: 78, height: 50)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(isSelected ? Color.accentColor.opacity(0.18) : Color(.quaternarySystemFill))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 1.5)
+            )
+            .foregroundStyle(isSelected ? Color.accentColor : .primary)
+        }
+        .buttonStyle(.plain)
     }
 }

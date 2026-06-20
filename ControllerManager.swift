@@ -8,6 +8,7 @@ final class ControllerManager: ObservableObject {
 
     @Published var isConnected: Bool = false
     @Published var controllerName: String = "No Controller"
+    @Published var productCategory: String = ""
     @Published var supportsBattery: Bool = false
     @Published var batteryPercent: Int = 0
     @Published var isCharging: Bool = false
@@ -42,6 +43,11 @@ final class ControllerManager: ObservableObject {
 
     private init() {
         self.bluetoothDeviceAddress = UserDefaults.standard.string(forKey: "cm_bt_device_address")
+        if let raw = UserDefaults.standard.string(forKey: "cm_manual_style") {
+            self.manualVisualStyle = ControllerVisualStyle(rawValue: raw)
+        } else {
+            self.manualVisualStyle = nil
+        }
         setupNotifications()
         // Try to connect to already-connected controllers
         if let controller = GCController.controllers().first {
@@ -76,6 +82,7 @@ final class ControllerManager: ObservableObject {
         DispatchQueue.main.async {
             self.isConnected = false
             self.controllerName = "No Controller"
+            self.productCategory = ""
             self.supportsBattery = false
             self.batteryPercent = 0
             self.isCharging = false
@@ -88,6 +95,7 @@ final class ControllerManager: ObservableObject {
     private func connect(_ controller: GCController) {
         isConnected = true
         controllerName = controller.vendorName ?? "Xbox Controller"
+        productCategory = controller.productCategory
         currentController = controller
         setupBattery(controller)
         setupGamepad(controller)
@@ -213,6 +221,19 @@ final class ControllerManager: ObservableObject {
                 self.pressedButtons.remove(button)
             }
         }
+    }
+
+    /// Manual override for the diamond's look — lets you pick a style
+    /// yourself when auto-detection guesses wrong (common for unbranded
+    /// clones) or you simply prefer a different symbol set. `nil` = auto.
+    @Published var manualVisualStyle: ControllerVisualStyle? {
+        didSet { UserDefaults.standard.set(manualVisualStyle?.rawValue, forKey: "cm_manual_style") }
+    }
+
+    /// Visual style (Xbox/PlayStation/generic) derived from the connected
+    /// controller's reported product category, unless manually overridden.
+    var visualStyle: ControllerVisualStyle {
+        manualVisualStyle ?? ControllerVisualStyle.detect(productCategory: productCategory)
     }
 
     // MARK: - Battery Display Helpers

@@ -11,6 +11,56 @@ extension Notification.Name {
     static let controllerMapperProfileSwitched = Notification.Name("cm.profileSwitchedViaController")
 }
 
+// MARK: - Controller Visual Style
+
+/// Adapts the on-screen diamond (face buttons) to match what's actually
+/// printed on the connected controller. GameController.framework already
+/// normalizes button *positions* across brands (buttonA is always the
+/// bottom action button, etc.), so this only needs to swap the symbol/label
+/// shown — the geometry stays correct automatically.
+enum ControllerVisualStyle: String, CaseIterable {
+    case xbox
+    case playStation
+    case generic
+
+    var displayName: String {
+        switch self {
+        case .xbox: return "Xbox-Style (ABXY)"
+        case .playStation: return "PlayStation-Style (✕○□△)"
+        case .generic: return "Generic (ABXY)"
+        }
+    }
+
+    static func detect(productCategory: String) -> ControllerVisualStyle {
+        let c = productCategory.lowercased()
+        if c.contains("dualshock") || c.contains("dualsense") || c.contains("playstation") {
+            return .playStation
+        }
+        if c.contains("xbox") {
+            return .xbox
+        }
+        return .generic
+    }
+
+    struct FaceButtonStyle {
+        let label: String
+        let color: Color
+    }
+
+    /// Returns an override label/color for face buttons, or `nil` to keep
+    /// the app's default Xbox-style ABXY look.
+    func override(for button: ControllerButton) -> FaceButtonStyle? {
+        guard self == .playStation else { return nil }
+        switch button {
+        case .a: return FaceButtonStyle(label: "✕", color: Color(hex: "#5B9CF5") ?? .blue)
+        case .b: return FaceButtonStyle(label: "○", color: Color(hex: "#E8534A") ?? .red)
+        case .x: return FaceButtonStyle(label: "□", color: Color(hex: "#F5739E") ?? .pink)
+        case .y: return FaceButtonStyle(label: "△", color: Color(hex: "#42C35C") ?? .green)
+        default: return nil
+        }
+    }
+}
+
 // MARK: - Controller Buttons
 
 enum ControllerButton: String, CaseIterable, Codable, Hashable {
@@ -210,6 +260,35 @@ struct Profile: Codable, Identifiable, Hashable {
     }
 
     static let `default` = Profile(name: "Default", colorHex: "#30D158", icon: "gamecontroller.fill")
+
+    // MARK: - Built-in Presets
+
+    /// Ready-made profiles covering use cases beyond gaming — pick one as a
+    /// starting point in "New Profile", then tweak freely.
+    static var builtInPresets: [Profile] {
+        [ankiPreset, mediaPreset]
+    }
+
+    private static var ankiPreset: Profile {
+        var p = Profile(name: "Anki — Study", colorHex: "#5AC8FA", icon: "graduationcap.fill")
+        p.mappings[.a]  = ButtonAction(type: .keyPress, keyMapping: KeyMapping(keyCode: 49, modifiers: 0, displayName: "Space"))       // Show Answer
+        p.mappings[.b]  = ButtonAction(type: .keyPress, keyMapping: KeyMapping(keyCode: 18, modifiers: 0, displayName: "1"))           // Again
+        p.mappings[.x]  = ButtonAction(type: .keyPress, keyMapping: KeyMapping(keyCode: 19, modifiers: 0, displayName: "2"))           // Hard
+        p.mappings[.y]  = ButtonAction(type: .keyPress, keyMapping: KeyMapping(keyCode: 20, modifiers: 0, displayName: "3"))           // Good
+        p.mappings[.rb] = ButtonAction(type: .keyPress, keyMapping: KeyMapping(keyCode: 21, modifiers: 0, displayName: "4"))           // Easy
+        p.mappings[.lb] = ButtonAction(type: .keyPress, keyMapping: KeyMapping(keyCode: 6,  modifiers: 0x100108, displayName: "⌘Z"))   // Undo
+        return p
+    }
+
+    private static var mediaPreset: Profile {
+        var p = Profile(name: "Media Control", colorHex: "#FF9500", icon: "play.circle.fill")
+        p.mappings[.a]      = ButtonAction(type: .keyPress, keyMapping: KeyMapping(keyCode: 49,  modifiers: 0, displayName: "Space"))  // Play/Pause
+        p.mappings[.dLeft]  = ButtonAction(type: .keyPress, keyMapping: KeyMapping(keyCode: 123, modifiers: 0, displayName: "←"))       // Rewind
+        p.mappings[.dRight] = ButtonAction(type: .keyPress, keyMapping: KeyMapping(keyCode: 124, modifiers: 0, displayName: "→"))       // Forward
+        p.mappings[.dUp]    = ButtonAction(type: .keyPress, keyMapping: KeyMapping(keyCode: 126, modifiers: 0, displayName: "↑"))       // Volume up
+        p.mappings[.dDown]  = ButtonAction(type: .keyPress, keyMapping: KeyMapping(keyCode: 125, modifiers: 0, displayName: "↓"))       // Volume down
+        return p
+    }
 }
 
 // MARK: - Color Helper

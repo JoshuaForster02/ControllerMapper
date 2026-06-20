@@ -28,11 +28,15 @@ struct ControllerLayoutView: View {
 
     var body: some View {
         GeometryReader { geo in
-            let scale = min(geo.size.width / W, geo.size.height / H)
+            // Clamp so the controller never gets blurry-huge on large windows
+            // or illegibly tiny on small ones.
+            let rawScale = min(geo.size.width / W, geo.size.height / H)
+            let scale = min(max(rawScale, 0.45), 1.8)
             ZStack {
                 controllerBody
                     .frame(width: W, height: H)
                     .scaleEffect(scale)
+                    .animation(.easeOut(duration: 0.2), value: scale)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -189,8 +193,12 @@ struct ControllerLayoutView: View {
         .offset(x: offset.x, y: offset.y)
     }
 
-    private func faceBtn(_ btn: ControllerButton, label: String, color: Color, at pos: CGPoint) -> some View {
-        Button {
+    private func faceBtn(_ btn: ControllerButton, label defaultLabel: String, color defaultColor: Color, at pos: CGPoint) -> some View {
+        let override = liveController.visualStyle.override(for: btn)
+        let label = override?.label ?? defaultLabel
+        let color = override?.color ?? defaultColor
+
+        return Button {
             selectedButton = btn
         } label: {
             ZStack {
@@ -204,7 +212,7 @@ struct ControllerLayoutView: View {
                     .shadow(color: selectedButton == btn ? color.opacity(0.5) : .clear, radius: 6)
 
                 Text(label)
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.system(size: label.count > 1 ? 8 : 10, weight: .bold))
                     .foregroundStyle(selectedButton == btn ? .white : color)
 
                 if hasMapping(btn) && selectedButton != btn {

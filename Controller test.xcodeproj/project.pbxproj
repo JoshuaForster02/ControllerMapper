@@ -23,10 +23,11 @@
 		7F3B51022FE5DD6400182106 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F3B51032FE5DD6400182106 /* AboutView.swift */; };
 		7F3B51052FE5DD6400182106 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7F3B51042FE5DD6400182106 /* Assets.xcassets */; };
 		7F3B51072FE5DD6400182106 /* BatteryRingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F3B51062FE5DD6400182106 /* BatteryRingView.swift */; };
+		7F3B51092FE5DD6400182106 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F3B51082FE5DD6400182106 /* DesignSystem.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		000000000000000000000120 /* Controller test.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Controller test.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		000000000000000000000120 /* ControllerMapper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "ControllerMapper.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		7F3B50DD2FE5DD6400182106 /* ControllerLayoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControllerLayoutView.swift; sourceTree = "<group>"; };
 		7F3B50DE2FE5DD6400182106 /* ControllerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControllerManager.swift; sourceTree = "<group>"; };
 		7F3B50DF2FE5DD6400182106 /* ControllerMapperApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControllerMapperApp.swift; sourceTree = "<group>"; };
@@ -43,6 +44,7 @@
 		7F3B51032FE5DD6400182106 /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
 		7F3B51042FE5DD6400182106 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7F3B51062FE5DD6400182106 /* BatteryRingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryRingView.swift; sourceTree = "<group>"; };
+		7F3B51082FE5DD6400182106 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,13 +76,14 @@
 				7F3B51032FE5DD6400182106 /* AboutView.swift */,
 				7F3B51042FE5DD6400182106 /* Assets.xcassets */,
 				7F3B51062FE5DD6400182106 /* BatteryRingView.swift */,
+				7F3B51082FE5DD6400182106 /* DesignSystem.swift */,
 			);
 			sourceTree = "<group>";
 		};
 		000000000000000000000020 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				000000000000000000000120 /* Controller test.app */,
+				000000000000000000000120 /* ControllerMapper.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -100,7 +103,7 @@
 			);
 			name = "Controller test";
 			productName = MyApp;
-			productReference = 000000000000000000000120 /* Controller test.app */;
+			productReference = 000000000000000000000120 /* ControllerMapper.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -165,6 +168,7 @@
 				7F3B51012FE5DD6400182106 /* BluetoothDevicePickerView.swift in Sources */,
 				7F3B51022FE5DD6400182106 /* AboutView.swift in Sources */,
 				7F3B51072FE5DD6400182106 /* BatteryRingView.swift in Sources */,
+				7F3B51092FE5DD6400182106 /* DesignSystem.swift in Sources */,
 			);
 		};
 /* End PBXSourcesBuildPhase section */
@@ -313,7 +317,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Map4Controller;
+				INFOPLIST_KEY_CFBundleDisplayName = ControllerMapper;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSAccessibilityUsageDescription = "ControllerMapper braucht Bedienungshilfen-Zugriff, um Tasten- und Mauseingaben deines Controllers zu simulieren.";
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "ControllerMapper liest den Akkustand deines gekoppelten Controllers über Bluetooth aus.";
@@ -331,7 +335,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.joshuaforster.controllermapper;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = ControllerMapper;
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = macosx;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -355,7 +359,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Map4Controller;
+				INFOPLIST_KEY_CFBundleDisplayName = ControllerMapper;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSAccessibilityUsageDescription = "ControllerMapper braucht Bedienungshilfen-Zugriff, um Tasten- und Mauseingaben deines Controllers zu simulieren.";
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "ControllerMapper liest den Akkustand deines gekoppelten Controllers über Bluetooth aus.";
@@ -373,7 +377,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.joshuaforster.controllermapper;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = ControllerMapper;
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = macosx;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;

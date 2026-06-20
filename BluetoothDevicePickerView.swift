@@ -9,22 +9,15 @@ struct BluetoothDevicePickerView: View {
     @State private var devices: [BluetoothPairedDevice] = []
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Image(systemName: "battery.100.bolt")
-                    .font(.title2)
-                    .foregroundStyle(Color.accentColor)
-                Text("Bluetooth-Akku-Quelle")
-                    .font(.title3.bold())
-            }
-
-            Text("Dein Controller meldet seinen Akkustand nicht direkt an Apps. Falls er per Bluetooth gekoppelt ist, kennt macOS seinen Akkustand oft trotzdem — wähle hier das passende Gerät aus.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: DS.spacingL) {
+            SheetHeader(
+                title: "Bluetooth-Akku-Quelle",
+                systemImage: "battery.100.bolt",
+                subtitle: "Dein Controller meldet seinen Akkustand nicht direkt an Apps. Falls er per Bluetooth gekoppelt ist, kennt macOS seinen Akkustand oft trotzdem — wähle hier das passende Gerät aus."
+            )
 
             if devices.isEmpty {
-                VStack(spacing: 8) {
+                VStack(spacing: DS.spacingS) {
                     Image(systemName: "antenna.radiowaves.left.and.right.slash")
                         .font(.system(size: 28))
                         .foregroundStyle(.tertiary)
@@ -34,13 +27,14 @@ struct BluetoothDevicePickerView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.vertical, 36)
+                .cardSurface(radius: DS.radiusMedium)
             } else {
                 List(devices) { device in
                     deviceRow(device)
                 }
                 .listStyle(.inset)
                 .frame(height: 280)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .clipShape(RoundedRectangle(cornerRadius: DS.radiusMedium))
             }
 
             HStack {
@@ -64,8 +58,7 @@ struct BluetoothDevicePickerView: View {
                     .buttonStyle(.borderedProminent)
             }
         }
-        .padding(24)
-        .frame(width: 440)
+        .sheetContainer(width: DS.sheetWidthRegular)
         .onAppear { refresh() }
     }
 

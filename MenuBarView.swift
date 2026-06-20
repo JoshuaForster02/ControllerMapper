@@ -134,9 +134,7 @@ struct MenuBarView: View {
     private var profilePicker: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("PROFILE")
-                .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(.secondary)
-                .tracking(1)
+                .sectionEyebrow()
                 .padding(.horizontal, 18)
                 .padding(.bottom, 2)
 

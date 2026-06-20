@@ -14,16 +14,21 @@ struct MappingDetailView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: DS.spacingL) {
                 buttonHeader
                 actionTypePicker
                 actionDetail
+                    .animation(.easeInOut(duration: 0.18), value: action.type)
                 Spacer()
             }
-            .padding(20)
+            .padding(DS.spacingL)
         }
         .onAppear { action = profile.mappings[button] ?? .none }
-        .onChange(of: button) { action = profile.mappings[$1] ?? .none }
+        .onChange(of: button) {
+            withAnimation(.easeInOut(duration: 0.15)) {
+                action = profile.mappings[$1] ?? .none
+            }
+        }
         .onChange(of: action) { saveAction($1) }
     }
 
@@ -173,9 +178,7 @@ struct MappingDetailView: View {
             }
 
             // Preset grid
-            Text("Presets")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            Text("PRESETS").sectionEyebrow()
 
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 72))], spacing: 6) {
                 ForEach(KeyMapping.presets, id: \.displayName) { km in

@@ -14,7 +14,7 @@ struct AboutView: View {
     }
 
     var body: some View {
-        VStack(spacing: 18) {
+        VStack(spacing: DS.spacingL) {
             Group {
                 if let icon = NSImage(named: NSImage.applicationIconName) {
                     Image(nsImage: icon)
@@ -97,15 +97,13 @@ struct AboutView: View {
                     .keyboardShortcut(.defaultAction)
             }
         }
-        .padding(28)
-        .frame(width: 360, height: 500)
+        .sheetContainer(width: 360)
+        .frame(height: 500)
     }
 
     private var permissionsSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Berechtigungen")
-                .font(.caption.bold())
-                .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: DS.spacingS) {
+            Text("Berechtigungen").sectionEyebrow()
 
             HStack {
                 Image(systemName: EventInjector.isAccessibilityGranted ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
@@ -123,6 +121,8 @@ struct AboutView: View {
                     .controlSize(.small)
                 }
             }
+            .padding(DS.spacingS)
+            .cardSurface(radius: DS.radiusSmall)
         }
         .frame(maxWidth: .infinity)
     }
