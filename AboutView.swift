@@ -69,7 +69,7 @@ struct AboutView: View {
             Spacer(minLength: 0)
 
             HStack {
-                Link("GitHub", destination: URL(string: "https://github.com")!)
+                Link("GitHub", destination: URL(string: "https://github.com/joshuaforster/ControllerMapper")!)
                     .font(.caption)
                 Spacer()
                 Button("Schließen") { dismiss() }
