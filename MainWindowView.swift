@@ -40,7 +40,7 @@ struct MainWindowView: View {
                let profile = profiles.profiles.first(where: { $0.id == id }) {
                 mainContent(profile: profile)
             } else {
-                Text("Select a profile")
+                Text("Profil auswählen")
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -111,17 +111,19 @@ struct MainWindowView: View {
     }
 
     private func profileRow(_ profile: Profile) -> some View {
-        HStack(spacing: 10) {
-            Circle()
-                .fill(profile.swiftUIColor)
-                .frame(width: 8, height: 8)
-
-            Image(systemName: profile.icon)
-                .font(.footnote)
-                .foregroundStyle(profile.swiftUIColor)
-                .frame(width: 16)
+        HStack(spacing: 9) {
+            // Colored icon tile — compact, polished, like an iOS app icon
+            ZStack {
+                RoundedRectangle(cornerRadius: 7)
+                    .fill(profile.swiftUIColor.opacity(0.18))
+                    .frame(width: 28, height: 28)
+                Image(systemName: profile.icon)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(profile.swiftUIColor)
+            }
 
             Text(profile.name)
+                .font(.subheadline)
                 .lineLimit(1)
 
             Spacer()
@@ -129,21 +131,22 @@ struct MainWindowView: View {
             if profiles.activeProfileID == profile.id {
                 Image(systemName: "bolt.fill")
                     .font(.caption2)
-                    .foregroundStyle(.yellow)
+                    .foregroundStyle(profile.swiftUIColor)
+                    .shadow(color: profile.swiftUIColor.opacity(0.5), radius: 3)
             }
         }
         .contentShape(Rectangle())
         .contextMenu {
-            Button("Activate") { profiles.activate(profile) }
-            Button("Duplicate") { profiles.duplicate(profile) }
+            Button("Aktivieren") { profiles.activate(profile) }
+            Button("Duplizieren") { profiles.duplicate(profile) }
             Divider()
-            Button("Export…") {
+            Button("Exportieren…") {
                 if let url = profiles.exportProfile(profile) {
                     NSWorkspace.shared.activateFileViewerSelecting([url])
                 }
             }
             Divider()
-            Button("Delete", role: .destructive) { profiles.delete(profile) }
+            Button("Löschen", role: .destructive) { profiles.delete(profile) }
         }
     }
 
@@ -174,7 +177,7 @@ struct MainWindowView: View {
                         Image(systemName: "hand.tap.fill")
                             .font(.system(size: 40))
                             .foregroundStyle(.quaternary)
-                        Text("Tap a button on the controller")
+                        Text("Button am Controller auswählen")
                             .foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -272,6 +275,48 @@ struct MainWindowView: View {
 
             Divider()
 
+            // Auto-switch row
+            HStack(spacing: 6) {
+                Image(systemName: "arrow.triangle.swap")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+
+                if !profile.autoSwitchBundleID.isEmpty,
+                   let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: profile.autoSwitchBundleID) {
+                    Text("Auto-Switch:")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                    Text(appURL.deletingPathExtension().lastPathComponent)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                    Button {
+                        profiles.setAutoSwitch(nil, for: profile.id)
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    Text("Auto-Switch:")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                    Button("App wählen…") {
+                        pickAutoSwitchApp(for: profile)
+                    }
+                    .font(.caption)
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color.accentColor)
+                }
+
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 5)
+            .background(.ultraThinMaterial)
+
+            Divider()
+
             // Controller visual with ambient profile-color glow
             ZStack {
                 RadialGradient(
@@ -287,6 +332,19 @@ struct MainWindowView: View {
             .frame(height: 240)
             .animation(.easeInOut(duration: 0.4), value: profile.id)
         }
+    }
+
+    private func pickAutoSwitchApp(for profile: Profile) {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.applicationBundle]
+        panel.directoryURL = URL(fileURLWithPath: "/Applications")
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.prompt = "Auswählen"
+        panel.message = "Welche App soll dieses Profil automatisch aktivieren?"
+        guard panel.runModal() == .OK, let url = panel.url,
+              let bundleID = Bundle(url: url)?.bundleIdentifier else { return }
+        profiles.setAutoSwitch(bundleID, for: profile.id)
     }
 
     private var designPicker: some View {
@@ -349,10 +407,12 @@ struct MainWindowView: View {
             .padding(.bottom, 4)
 
             List(filteredButtons, id: \.self, selection: $selectedButton) { btn in
+                let mappedAction = profile.mappings[btn].flatMap { $0.type != .none ? $0 : nil }
                 HStack(spacing: 10) {
                     Image(systemName: btn.sfSymbol)
                         .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        // Icon adopts action color when mapped — makes the list scannable at a glance
+                        .foregroundStyle(mappedAction.map { badgeColor($0) } ?? Color.secondary)
                         .frame(width: 20)
 
                     Text(btn.displayName)
@@ -360,7 +420,7 @@ struct MainWindowView: View {
 
                     Spacer()
 
-                    if let action = profile.mappings[btn], action.type != .none {
+                    if let action = mappedAction {
                         actionBadge(action)
                     } else {
                         Text("—")
@@ -375,25 +435,38 @@ struct MainWindowView: View {
         }
     }
 
+    // Color-coded by action type — at a glance you can see what's mapped where
+    private func badgeColor(_ action: ButtonAction) -> Color {
+        switch action.type {
+        case .keyPress:                                          return .blue
+        case .leftClick, .rightClick, .middleClick:             return .purple
+        case .scrollUp, .scrollDown, .scrollLeft, .scrollRight: return .teal
+        case .macro:                                             return .orange
+        case .openApp:                                          return .pink
+        default:                                                return Color.accentColor
+        }
+    }
+
     private func actionBadge(_ action: ButtonAction) -> some View {
-        HStack(spacing: 4) {
+        let color = badgeColor(action)
+        return HStack(spacing: 4) {
             Image(systemName: action.type.sfSymbol)
                 .font(.caption2)
             Text(badgeLabel(action))
                 .font(.caption)
                 .lineLimit(1)
         }
-        .foregroundStyle(Color.accentColor)
+        .foregroundStyle(color)
         .padding(.horizontal, 8)
         .padding(.vertical, 2)
-        .background(Capsule().fill(Color.accentColor.opacity(0.12)))
+        .background(Capsule().fill(color.opacity(0.12)))
     }
 
     private func badgeLabel(_ action: ButtonAction) -> String {
         switch action.type {
         case .none: return ""
         case .keyPress: return action.keyMapping.displayName
-        case .macro: return "\(action.macroSteps.count) steps"
+        case .macro: return "\(action.macroSteps.count) Schritte"
         case .openApp: return action.appName.isEmpty ? "App" : action.appName
         default: return action.type.rawValue
         }
@@ -428,10 +501,14 @@ struct MainWindowView: View {
             if let id = selectedProfileID,
                let profile = profiles.profiles.first(where: { $0.id == id }) {
                 Button {
-                    if let url = profiles.exportProfile(profile) {
-                        NSSavePanel().runModal()
-                        NSWorkspace.shared.activateFileViewerSelecting([url])
-                    }
+                    // Encode first — bail early if that fails.
+                    guard let data = try? JSONEncoder().encode(profile) else { return }
+                    let panel = NSSavePanel()
+                    panel.nameFieldStringValue = "\(profile.name).cmprofile"
+                    panel.allowedContentTypes = [.init(filenameExtension: "cmprofile") ?? .data]
+                    panel.canCreateDirectories = true
+                    guard panel.runModal() == .OK, let dest = panel.url else { return }
+                    try? data.write(to: dest)
                 } label: {
                     Label("Export", systemImage: "square.and.arrow.up")
                 }
@@ -445,10 +522,12 @@ struct MainWindowView: View {
 struct NewProfileSheet: View {
     var onCreate: (Profile) -> Void
 
-    @State private var name: String = "New Profile"
+    @State private var name: String = "Neues Profil"
     @State private var colorHex: String = "#007AFF"
     @State private var icon: String = "gamecontroller.fill"
     @State private var basePreset: Profile?
+    @State private var customColor: Color = Color(hex: "#007AFF") ?? .blue
+    @State private var useCustomColor = false
     @Environment(\.dismiss) private var dismiss
 
     let icons = ["gamecontroller.fill", "bolt.fill", "star.fill", "flame.fill",
@@ -457,43 +536,61 @@ struct NewProfileSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.spacingL) {
-            SheetHeader(title: "New Profile", systemImage: "plus.circle.fill")
+            SheetHeader(title: "Neues Profil", systemImage: "plus.circle.fill")
 
             VStack(alignment: .leading, spacing: DS.spacingS) {
-                Text("START FROM").sectionEyebrow()
+                Text("VORLAGE").sectionEyebrow()
                 HStack(spacing: 8) {
-                    presetChip(nil, label: "Blank", symbol: "doc")
+                    presetChip(nil, label: "Leer", symbol: "doc")
                     ForEach(Profile.builtInPresets) { preset in
                         presetChip(preset, label: preset.name, symbol: preset.icon)
                     }
                 }
             }
 
-            TextField("Profile name", text: $name)
+            TextField("Profilname", text: $name)
                 .textFieldStyle(.roundedBorder)
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("COLOR").sectionEyebrow()
-                HStack {
+                Text("FARBE").sectionEyebrow()
+                HStack(spacing: 8) {
                     ForEach(colors, id: \.self) { hex in
                         Button {
                             colorHex = hex
+                            useCustomColor = false
                         } label: {
                             Circle()
                                 .fill(Color(hex: hex) ?? .blue)
                                 .frame(width: 24, height: 24)
                                 .overlay(
-                                    Circle().stroke(.white, lineWidth: colorHex == hex ? 2 : 0)
-                                        .shadow(radius: colorHex == hex ? 2 : 0)
+                                    Circle().stroke(.white, lineWidth: !useCustomColor && colorHex == hex ? 2 : 0)
+                                        .shadow(radius: !useCustomColor && colorHex == hex ? 2 : 0)
                                 )
                         }
                         .buttonStyle(.plain)
                     }
+
+                    Divider().frame(height: 20)
+
+                    // Free color pick
+                    ColorPicker("", selection: $customColor, supportsOpacity: false)
+                        .labelsHidden()
+                        .frame(width: 24, height: 24)
+                        .overlay(
+                            Circle()
+                                .stroke(.white, lineWidth: useCustomColor ? 2 : 0)
+                                .frame(width: 24, height: 24)
+                                .allowsHitTesting(false)
+                        )
+                        .onChange(of: customColor) { _, c in
+                            colorHex = c.hexString
+                            useCustomColor = true
+                        }
                 }
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("ICON").sectionEyebrow()
+                Text("SYMBOL").sectionEyebrow()
                 LazyVGrid(columns: Array(repeating: GridItem(.fixed(36)), count: 5), spacing: 8) {
                     ForEach(icons, id: \.self) { sf in
                         Button {
@@ -517,9 +614,9 @@ struct NewProfileSheet: View {
             }
 
             HStack {
-                Button("Cancel", role: .cancel) { dismiss() }
+                Button("Abbrechen", role: .cancel) { dismiss() }
                 Spacer()
-                Button("Create") {
+                Button("Erstellen") {
                     var p = basePreset ?? Profile()
                     p.id = UUID()
                     p.name = name
@@ -539,9 +636,10 @@ struct NewProfileSheet: View {
         let isSelected = basePreset?.id == preset?.id
         return Button {
             basePreset = preset
-            name = preset?.name ?? "New Profile"
+            name = preset?.name ?? "Neues Profil"
             colorHex = preset?.colorHex ?? "#007AFF"
             icon = preset?.icon ?? "gamecontroller.fill"
+            useCustomColor = false
         } label: {
             VStack(spacing: 4) {
                 Image(systemName: symbol)

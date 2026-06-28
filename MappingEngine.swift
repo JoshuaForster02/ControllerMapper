@@ -33,7 +33,9 @@ final class MappingEngine: ObservableObject {
     private var viewHeld = false
     private var menuHeld = false
     private var profileHoldTimer: Timer?
-    private var profileHoldTriggered = false
+
+    // Rate-limiter for axis-driven scroll (axes tick at 60 fps, scroll must not).
+    private var lastAxisScrollDate: [ControllerButton: Date] = [:]
 
     private init() {
         isEnabled = UserDefaults.standard.object(forKey: "cm_mapping_enabled") as? Bool ?? true
@@ -96,12 +98,10 @@ final class MappingEngine: ObservableObject {
         } else {
             profileHoldTimer?.invalidate()
             profileHoldTimer = nil
-            profileHoldTriggered = false
         }
     }
 
     private func cycleProfileViaController() {
-        profileHoldTriggered = true
         let list = profiles.profiles
         guard list.count > 1 else { return }
         let currentIndex = list.firstIndex(where: { $0.id == profiles.activeProfileID }) ?? 0
@@ -213,17 +213,27 @@ final class MappingEngine: ObservableObject {
             return
         }
 
-        // Scroll via axis
+        // Scroll via axis — rate-limited to ≈12 Hz so the 60 fps tick doesn't
+        // fire hundreds of scroll lines per second and make the page uncontrollable.
         let scrollThreshold: Float = 0.5
+        let scrollCooldown: TimeInterval = 0.08  // ≈12 events/sec max per axis
+        let now = Date()
+
         if let xa = xAction {
-            let amt = xa.scrollAmount
-            if xValue > scrollThreshold  { injector.scroll(dx: amt,  dy: 0) }
-            if xValue < -scrollThreshold { injector.scroll(dx: -amt, dy: 0) }
+            let elapsed = now.timeIntervalSince(lastAxisScrollDate[xButton] ?? .distantPast)
+            if elapsed >= scrollCooldown {
+                let amt = xa.scrollAmount
+                if xValue > scrollThreshold  { injector.scroll(dx: amt,  dy: 0); lastAxisScrollDate[xButton] = now }
+                if xValue < -scrollThreshold { injector.scroll(dx: -amt, dy: 0); lastAxisScrollDate[xButton] = now }
+            }
         }
         if let ya = yAction {
-            let amt = ya.scrollAmount
-            if yValue > scrollThreshold  { injector.scroll(dx: 0, dy: amt) }
-            if yValue < -scrollThreshold { injector.scroll(dx: 0, dy: -amt) }
+            let elapsed = now.timeIntervalSince(lastAxisScrollDate[yButton] ?? .distantPast)
+            if elapsed >= scrollCooldown {
+                let amt = ya.scrollAmount
+                if yValue > scrollThreshold  { injector.scroll(dx: 0, dy: amt);  lastAxisScrollDate[yButton] = now }
+                if yValue < -scrollThreshold { injector.scroll(dx: 0, dy: -amt); lastAxisScrollDate[yButton] = now }
+            }
         }
     }
 }

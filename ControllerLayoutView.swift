@@ -335,23 +335,40 @@ struct ControllerLayoutView: View {
         size: CGSize,
         @ViewBuilder label: () -> Content
     ) -> some View {
-        Button {
+        let pressed = isLivePressed(btn)
+        let selected = selectedButton == btn
+
+        return Button {
             selectedButton = btn
         } label: {
             RoundedRectangle(cornerRadius: 5)
-                .fill(isLivePressed(btn)
-                      ? Color.white.opacity(0.25)
-                      : selectedButton == btn
-                          ? Color.accentColor.opacity(0.3)
-                          : Color(.sRGB, red: 0.14, green: 0.14, blue: 0.16, opacity: 1))
+                .fill(pressed || selected
+                      ? Color.accentColor.opacity(0.3)
+                      : Color(.sRGB, red: 0.14, green: 0.14, blue: 0.16, opacity: 1))
                 .frame(width: size.width, height: size.height)
                 .overlay(label())
-                .scaleEffect(isLivePressed(btn) ? 1.06 : 1.0)
-                .animation(.easeOut(duration: 0.1), value: isLivePressed(btn))
+                // Mapping dot — top-right corner, matches face-button treatment
+                .overlay(alignment: .topTrailing) {
+                    Circle()
+                        .fill(Color.accentColor)
+                        .frame(width: 5, height: 5)
+                        .padding(2)
+                        .opacity(hasMapping(btn) && !selected ? 1 : 0)
+                }
+                .scaleEffect(pressed ? 1.06 : 1.0)
+                .animation(.easeOut(duration: 0.1), value: pressed)
+                // Border: accent when selected, subtle white otherwise
                 .overlay(
                     RoundedRectangle(cornerRadius: 5)
-                        .stroke(selectedButton == btn ? Color.accentColor : Color.white.opacity(0.08),
-                                lineWidth: 1.5)
+                        .stroke(selected ? Color.accentColor : Color.white.opacity(0.08), lineWidth: 1.5)
+                )
+                // Live-press glow ring (matches face-button pressGlow but rounded rect shape)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 5)
+                        .stroke(.white.opacity(pressed ? 0.9 : 0), lineWidth: 2)
+                        .scaleEffect(pressed ? 1.25 : 1.0)
+                        .animation(.easeOut(duration: 0.12), value: pressed)
+                        .allowsHitTesting(false)
                 )
         }
         .buttonStyle(.plain)

@@ -29,6 +29,12 @@ struct MappingDetailView: View {
                 action = profile.mappings[newButton] ?? .none
             }
         }
+        .onChange(of: profile.id) { _, _ in
+            // Profile switched while this button was still selected — reload.
+            withAnimation(.easeInOut(duration: 0.15)) {
+                action = profile.mappings[button] ?? .none
+            }
+        }
         .onChange(of: action) { saveAction($1) }
     }
 
@@ -238,16 +244,16 @@ struct MappingDetailView: View {
     private var scrollDetail: some View {
         VStack(alignment: .leading, spacing: 10) {
             Divider()
-            Text("Scroll Amount (pixels per press)")
+            Text("Scroll Amount (lines per press)")
                 .font(.headline)
             HStack {
                 Slider(value: Binding(
                     get: { Double(action.scrollAmount) },
                     set: { var a = action; a.scrollAmount = Int($0); action = a }
-                ), in: 1...100, step: 1)
-                Text("\(action.scrollAmount)px")
+                ), in: 1...20, step: 1)
+                Text("\(action.scrollAmount)")
                     .font(.caption.monospacedDigit())
-                    .frame(width: 40)
+                    .frame(width: 28)
             }
         }
     }
@@ -417,7 +423,9 @@ struct KeyCaptureView: NSViewRepresentable {
     func makeNSView(context: Context) -> NSTextField {
         let field = KeyCaptureTextField()
         field.onCapture = onCapture
-        field.isHidden = true
+        // alphaValue = 0 keeps the view invisible while still allowing it to
+        // become first responder. isHidden = true would block key events entirely.
+        field.alphaValue = 0
         DispatchQueue.main.async { field.window?.makeFirstResponder(field) }
         return field
     }
@@ -436,6 +444,15 @@ final class KeyCaptureTextField: NSTextField {
         if event.modifierFlags.contains(.option)   { displayName += "⌥" }
         if event.modifierFlags.contains(.control)  { displayName += "⌃" }
         displayName += name
-        onCapture?(event.keyCode, UInt64(event.modifierFlags.rawValue), displayName)
+
+        // NSEvent.ModifierFlags ≠ CGEventFlags — must convert explicitly.
+        // Passing NSEvent rawValue into CGEventFlags produces wrong bits and breaks injection.
+        var cgFlags: CGEventFlags = []
+        if event.modifierFlags.contains(.command) { cgFlags.insert(.maskCommand) }
+        if event.modifierFlags.contains(.shift)   { cgFlags.insert(.maskShift) }
+        if event.modifierFlags.contains(.option)  { cgFlags.insert(.maskAlternate) }
+        if event.modifierFlags.contains(.control) { cgFlags.insert(.maskControl) }
+
+        onCapture?(event.keyCode, cgFlags.rawValue, displayName)
     }
 }

@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import Combine
+import AppKit
 
 final class ProfileManager: ObservableObject {
     static let shared = ProfileManager()
@@ -20,6 +21,7 @@ final class ProfileManager: ObservableObject {
 
     private init() {
         load()
+        setupAutoSwitch()
         if profiles.isEmpty {
             let p = Profile.default
             profiles = [p]
@@ -35,6 +37,36 @@ final class ProfileManager: ObservableObject {
                 activeProfileID = profiles.first?.id
             }
         }
+    }
+
+    // MARK: - Auto-Switch (frontmost app → profile)
+
+    private func setupAutoSwitch() {
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(frontmostAppChanged(_:)),
+            name: NSWorkspace.didActivateApplicationNotification,
+            object: nil
+        )
+    }
+
+    @objc private func frontmostAppChanged(_ notification: Notification) {
+        guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
+              let bundleID = app.bundleIdentifier,
+              !bundleID.isEmpty else { return }
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            guard let match = profiles.first(where: {
+                !$0.autoSwitchBundleID.isEmpty && $0.autoSwitchBundleID == bundleID
+            }) else { return }
+            activate(match)
+        }
+    }
+
+    func setAutoSwitch(_ bundleID: String?, for profileID: UUID) {
+        guard let idx = profiles.firstIndex(where: { $0.id == profileID }) else { return }
+        profiles[idx].autoSwitchBundleID = bundleID ?? ""
+        save()
     }
 
     // MARK: - CRUD

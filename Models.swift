@@ -81,7 +81,7 @@ enum ControllerVisualStyle: String, CaseIterable {
         switch self {
         case .xbox: return "Xbox-Style (ABXY)"
         case .playStation: return "PlayStation-Style (✕○□△)"
-        case .generic: return "Generic (ABXY)"
+        case .generic: return "Generic (1/2/3/4)"
         }
     }
 
@@ -104,13 +104,27 @@ enum ControllerVisualStyle: String, CaseIterable {
     /// Returns an override label/color for face buttons, or `nil` to keep
     /// the app's default Xbox-style ABXY look.
     func override(for button: ControllerButton) -> FaceButtonStyle? {
-        guard self == .playStation else { return nil }
-        switch button {
-        case .a: return FaceButtonStyle(label: "✕", color: Color(hex: "#5B9CF5") ?? .blue)
-        case .b: return FaceButtonStyle(label: "○", color: Color(hex: "#E8534A") ?? .red)
-        case .x: return FaceButtonStyle(label: "□", color: Color(hex: "#F5739E") ?? .pink)
-        case .y: return FaceButtonStyle(label: "△", color: Color(hex: "#42C35C") ?? .green)
-        default: return nil
+        switch self {
+        case .playStation:
+            switch button {
+            case .a: return FaceButtonStyle(label: "✕", color: Color(hex: "#5B9CF5") ?? .blue)
+            case .b: return FaceButtonStyle(label: "○", color: Color(hex: "#E8534A") ?? .red)
+            case .x: return FaceButtonStyle(label: "□", color: Color(hex: "#F5739E") ?? .pink)
+            case .y: return FaceButtonStyle(label: "△", color: Color(hex: "#42C35C") ?? .green)
+            default: return nil
+            }
+        case .generic:
+            // Neutral numbered look so picking "Generic" is visibly
+            // different from "Xbox", not just the same ABXY repainted.
+            switch button {
+            case .a: return FaceButtonStyle(label: "1", color: .gray)
+            case .b: return FaceButtonStyle(label: "2", color: .gray)
+            case .x: return FaceButtonStyle(label: "3", color: .gray)
+            case .y: return FaceButtonStyle(label: "4", color: .gray)
+            default: return nil
+            }
+        case .xbox:
+            return nil
         }
     }
 }
@@ -284,7 +298,7 @@ struct ButtonAction: Codable, Hashable {
     var mouseInverted: Bool = false
     var appBundleID: String = ""
     var appName: String = ""
-    var scrollAmount: Int = 10
+    var scrollAmount: Int = 3
 
     static let none = ButtonAction(type: .none)
 }

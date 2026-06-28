@@ -65,6 +65,7 @@ struct BluetoothDevicePickerView: View {
     private func deviceRow(_ device: BluetoothPairedDevice) -> some View {
         Button {
             controller.bluetoothDeviceAddress = device.id
+            dismiss()   // auto-close — no need to tap "Fertig" separately
         } label: {
             HStack(spacing: 10) {
                 Image(systemName: "circle.fill")

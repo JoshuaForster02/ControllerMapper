@@ -15,6 +15,11 @@ final class EventInjector {
 
     static func requestAccessibilityIfNeeded() {
         guard !AXIsProcessTrusted() else { return }
+        // Only open System Settings once — not on every rebuild.
+        // After the first prompt the About panel's "Öffnen" button handles re-granting.
+        let key = "cm_accessibility_prompted_once"
+        guard !UserDefaults.standard.bool(forKey: key) else { return }
+        UserDefaults.standard.set(true, forKey: key)
         let opts = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
         AXIsProcessTrustedWithOptions(opts)
     }
@@ -78,8 +83,10 @@ final class EventInjector {
     // MARK: - Scroll
 
     func scroll(dx: Int, dy: Int) {
+        // .line units = discrete scroll wheel behaviour (what apps actually respond to).
+        // .pixel would produce continuous/trackpad-style events that most apps ignore.
         let event = CGEvent(scrollWheelEvent2Source: eventSource,
-                            units: .pixel,
+                            units: .line,
                             wheelCount: 2,
                             wheel1: Int32(dy),
                             wheel2: Int32(dx),

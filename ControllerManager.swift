@@ -93,6 +93,10 @@ final class ControllerManager: ObservableObject {
             self.batteryPercent = 0
             self.isCharging = false
             self.batteryTimer?.invalidate()
+            // Clear live-press state so buttons don't appear stuck glowing after disconnect.
+            self.pressedButtons = []
+            self.leftStick  = .zero
+            self.rightStick = .zero
         }
     }
 
