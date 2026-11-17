@@ -24,6 +24,8 @@
 		7F3B51052FE5DD6400182106 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7F3B51042FE5DD6400182106 /* Assets.xcassets */; };
 		7F3B51072FE5DD6400182106 /* BatteryRingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F3B51062FE5DD6400182106 /* BatteryRingView.swift */; };
 		7F3B51092FE5DD6400182106 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F3B51082FE5DD6400182106 /* DesignSystem.swift */; };
+		A13000000000000000000002 /* InputSafety.swift in Sources */ = {isa = PBXBuildFile; fileRef = A13000000000000000000001 /* InputSafety.swift */; };
+		A13000000000000000000004 /* MotionKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = A13000000000000000000003 /* MotionKit.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -45,6 +47,8 @@
 		7F3B51042FE5DD6400182106 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7F3B51062FE5DD6400182106 /* BatteryRingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryRingView.swift; sourceTree = "<group>"; };
 		7F3B51082FE5DD6400182106 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		A13000000000000000000001 /* InputSafety.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputSafety.swift; sourceTree = "<group>"; };
+		A13000000000000000000003 /* MotionKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionKit.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -59,6 +63,8 @@
 		000000000000000000000001 = {
 			isa = PBXGroup;
 			children = (
+				A13000000000000000000003 /* MotionKit.swift */,
+				A13000000000000000000001 /* InputSafety.swift */,
 				000000000000000000000020 /* Products */,
 				7F3B50DD2FE5DD6400182106 /* ControllerLayoutView.swift */,
 				7F3B50DE2FE5DD6400182106 /* ControllerManager.swift */,
@@ -154,6 +160,8 @@
 		000000000000000120000000 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
+				A13000000000000000000004 /* MotionKit.swift in Sources */,
+				A13000000000000000000002 /* InputSafety.swift in Sources */,
 				7F3B50E92FE5DD6400182106 /* MappingDetailView.swift in Sources */,
 				7F3B50EA2FE5DD6400182106 /* MainWindowView.swift in Sources */,
 				7F3B50EB2FE5DD6400182106 /* ControllerManager.swift in Sources */,
@@ -231,7 +239,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -295,7 +303,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PROJECT_UNIQUE_VALUE = NPVMHT65;
@@ -312,7 +320,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
@@ -333,7 +341,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.joshuaforster.controllermapper;
 				PRODUCT_NAME = ControllerMapper;
 				REGISTER_APP_GROUPS = YES;
@@ -354,7 +362,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
@@ -375,7 +383,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.joshuaforster.controllermapper;
 				PRODUCT_NAME = ControllerMapper;
 				REGISTER_APP_GROUPS = YES;

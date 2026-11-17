@@ -34,6 +34,7 @@ final class ControllerManager: ObservableObject {
     var rightTrigger: Float = 0
 
     // Per-button pressed callbacks: [button -> (isPressed) -> Void]
+    var onInputReset: (() -> Void)?
     var buttonCallbacks: [ControllerButton: (Bool) -> Void] = [:]
     // Per-axis callbacks:  [button -> (value: −1…1) -> Void]
     var axisCallbacks:   [ControllerButton: (Float) -> Void] = [:]
@@ -85,7 +86,11 @@ final class ControllerManager: ObservableObject {
     }
 
     @objc private func controllerDisconnected(_ notification: Notification) {
+        guard let disconnected = notification.object as? GCController else { return }
         DispatchQueue.main.async {
+            guard self.currentController === disconnected else { return }
+            self.onInputReset?(); self.unwire(disconnected); self.currentController = nil
+            self.leftTrigger = 0; self.rightTrigger = 0
             self.isConnected = false
             self.controllerName = "No Controller"
             self.productCategory = ""
@@ -100,9 +105,26 @@ final class ControllerManager: ObservableObject {
         }
     }
 
+    private func unwire(_ controller: GCController) {
+        guard let gp = controller.extendedGamepad else { return }
+        let buttons: [GCControllerButtonInput?] = [gp.buttonA, gp.buttonB, gp.buttonX, gp.buttonY,
+            gp.leftShoulder, gp.rightShoulder, gp.leftThumbstickButton, gp.rightThumbstickButton,
+            gp.dpad.up, gp.dpad.down, gp.dpad.left, gp.dpad.right, gp.buttonMenu, gp.buttonOptions, gp.buttonHome]
+        for button in buttons.compactMap({ $0 }) { button.pressedChangedHandler = nil; button.valueChangedHandler = nil }
+        gp.leftTrigger.valueChangedHandler = nil; gp.rightTrigger.valueChangedHandler = nil
+        gp.leftThumbstick.valueChangedHandler = nil; gp.rightThumbstick.valueChangedHandler = nil
+    }
+    func shutdown() {
+        onInputReset?(); GCController.stopWirelessControllerDiscovery(); batteryTimer?.invalidate()
+        if let currentController { unwire(currentController) }
+        NotificationCenter.default.removeObserver(self); cancellables.removeAll()
+    }
     // MARK: - Connect
 
     private func connect(_ controller: GCController) {
+        if let currentController, currentController !== controller { onInputReset?(); unwire(currentController) }
+        controller.handlerQueue = .main
+        leftStick = .zero; rightStick = .zero; leftTrigger = 0; rightTrigger = 0; pressedButtons = []
         isConnected = true
         controllerName = controller.vendorName ?? "Xbox Controller"
         productCategory = controller.productCategory

@@ -1,6 +1,35 @@
-<div align="center">
+# Ctrl
 
-# 🎮 ControllerMapper
+Native Mac-App für Gamepad-Belegungen: Tastatur, Maus, Scrollen und Makros.
+
+## Aktuelle Version 1.3
+Futuristische Live-Oberfläche mit reduzierter Bewegung nach Systemeinstellung.
+Animationen pausieren, wenn die App nicht aktiv ist. Gedrückte Ausgaben werden
+bei Pause, Trennung, Profilwechsel und Programmende freigegeben. Makros
+lassen sich abbrechen; Profilimporte sind begrenzt und geprüft. Exporte
+landen über einen Speichern-Dialog am selbst gewählten Ort.
+
+macOS 14 oder neuer, Intel und Apple Silicon. Der Release ist mit einem
+Apple-Entwicklerzertifikat signiert, noch nicht notarisiert.
+
+[Mac-Download](https://github.com/JoshuaForster02/ControllerMapper/releases/latest/download/Ctrl-mac.dmg) · [Apps und Anleitung](https://joshuaforster.de/apps/)
+
+## Einrichtung
+1. Ctrl.app in Programme ziehen und öffnen.
+2. Gamepad in den Bluetooth-Einstellungen von macOS verbinden.
+3. Bedienungshilfen für Ctrl über den ausdrücklichen Schalter in der App erlauben.
+4. Profil wählen, Tasten belegen und Ausgabe aktivieren. Beim Testen zuerst eine ungefährliche Ziel-App verwenden.
+
+Ctrl fragt beim Start weder automatisch nach Bedienungshilfen noch
+Benachrichtigungen und trägt sich nicht automatisch als Login-Objekt ein.
+Vorhandene Profile bleiben unter derselben Bundle-ID gespeichert.
+
+## Bauen und prüfen
+`python3 scripts/build-release.py` baut und prüft die universelle App mit
+Apples SDKs. `CTRL_BUILD_DIR` und `CTRL_SIGN_IDENTITY` setzen bei Bedarf
+Ausgabeort und Signieridentität. Schlüssel werden nicht im Repository gespeichert.
+Die Prüfungen erzeugen keine echten Tastatur- oder Mausereignisse.
+
 
 **Turn any Xbox-compatible controller into a fully programmable macOS input device — for gaming, studying, or media control.**
 
@@ -9,8 +38,8 @@ Map buttons to keystrokes, mouse clicks, scrolling, and macros — works great w
 [![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-blue?style=flat-square)](#installation)
 [![Swift](https://img.shields.io/badge/swift-5-orange?style=flat-square)](#installation)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
-[![Latest Release](https://img.shields.io/github/v/release/joshuaforster/ControllerMapper?style=flat-square)](https://github.com/joshuaforster/ControllerMapper/releases/latest)
-[![Stars](https://img.shields.io/github/stars/joshuaforster/ControllerMapper?style=flat-square)](https://github.com/joshuaforster/ControllerMapper/stargazers)
+[![Latest Release](https://img.shields.io/github/v/release/joshuaforster/ControllerMapper?style=flat-square)](https://github.com/JoshuaForster02/ControllerMapper/releases/latest)
+[![Stars](https://img.shields.io/github/stars/joshuaforster/ControllerMapper?style=flat-square)](https://github.com/JoshuaForster02/ControllerMapper/stargazers)
 
 </div>
 
@@ -62,14 +91,14 @@ Both ship as regular profiles, so you can duplicate and tweak them like any othe
 
 ### Option 1: Download (easiest)
 
-Grab the latest build from the [**Releases page**](https://github.com/joshuaforster/ControllerMapper/releases/latest) — unzip, move `ControllerMapper.app` to `/Applications`, and open it. Since it isn't notarized yet, right-click → **Open** the first time (or **System Settings → Privacy & Security → Open Anyway**) to bypass Gatekeeper.
+Grab the latest build from the [**Releases page**](https://github.com/JoshuaForster02/ControllerMapper/releases/latest) — unzip, move `ControllerMapper.app` to `/Applications`, and open it. Since it isn't notarized yet, right-click → **Open** the first time (or **System Settings → Privacy & Security → Open Anyway**) to bypass Gatekeeper.
 
 ### Option 2: Build from source
 
 **Requirements:** macOS 14 (Sonoma) or later, Xcode 15+.
 
 ```bash
-git clone https://github.com/joshuaforster/ControllerMapper.git
+git clone https://github.com/JoshuaForster02/ControllerMapper.git
 cd ControllerMapper
 open "Controller test.xcodeproj"
 ```

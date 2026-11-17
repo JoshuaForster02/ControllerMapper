@@ -2,6 +2,9 @@ import SwiftUI
 
 /// Visual Xbox Series S controller. Tap a button to select it.
 struct ControllerLayoutView: View {
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    @AppStorage("futuristicMotion") private var motionMode = "system"
+    private var reduceMotion: Bool { motionMode == "off" || (motionMode != "on" && systemReduceMotion) }
     @Binding var selectedButton: ControllerButton?
     let profile: Profile
 
@@ -16,9 +19,10 @@ struct ControllerLayoutView: View {
     private func pressGlow(_ btn: ControllerButton) -> some View {
         let pressed = isLivePressed(btn)
         return Circle()
-            .stroke(.white.opacity(pressed ? 0.9 : 0), lineWidth: 2)
+            .stroke(Color(red: 0.27, green: 0.67, blue: 1).opacity(pressed ? 0.95 : 0), lineWidth: 1.5)
+            .shadow(color: Color.blue.opacity(pressed ? 0.65 : 0), radius: 10)
             .scaleEffect(pressed ? 1.25 : 1.0)
-            .animation(.easeOut(duration: 0.12), value: pressed)
+            .animation(reduceMotion ? nil : .spring(response: 0.28, dampingFraction: 0.55), value: pressed)
             .allowsHitTesting(false)
     }
 
@@ -36,7 +40,7 @@ struct ControllerLayoutView: View {
                 controllerBody
                     .frame(width: W, height: H)
                     .scaleEffect(scale)
-                    .animation(.easeOut(duration: 0.2), value: scale)
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: scale)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -365,9 +369,10 @@ struct ControllerLayoutView: View {
                 // Live-press glow ring (matches face-button pressGlow but rounded rect shape)
                 .overlay(
                     RoundedRectangle(cornerRadius: 5)
-                        .stroke(.white.opacity(pressed ? 0.9 : 0), lineWidth: 2)
+                        .stroke(Color(red: 0.27, green: 0.67, blue: 1).opacity(pressed ? 0.95 : 0), lineWidth: 1.5)
+            .shadow(color: Color.blue.opacity(pressed ? 0.65 : 0), radius: 10)
                         .scaleEffect(pressed ? 1.25 : 1.0)
-                        .animation(.easeOut(duration: 0.12), value: pressed)
+                        .animation(reduceMotion ? nil : .spring(response: 0.28, dampingFraction: 0.55), value: pressed)
                         .allowsHitTesting(false)
                 )
         }

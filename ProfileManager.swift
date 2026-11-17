@@ -2,11 +2,13 @@ import Foundation
 import SwiftUI
 import Combine
 import AppKit
+import UniformTypeIdentifiers
 
 final class ProfileManager: ObservableObject {
     static let shared = ProfileManager()
 
     @Published var profiles: [Profile] = []
+    @Published var transferError: String?
     @Published var activeProfileID: UUID?
 
     private let storageKey  = "cm_profiles"
@@ -130,18 +132,26 @@ final class ProfileManager: ObservableObject {
     // MARK: - Export / Import
 
     func exportProfile(_ profile: Profile) -> URL? {
-        guard let data = try? JSONEncoder().encode(profile) else { return nil }
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("\(profile.name).cmprofile")
-        try? data.write(to: url)
-        return url
+        do {
+            let valid = try ProfileFile.validate(profile)
+            let panel = NSSavePanel()
+            panel.allowedContentTypes = [UTType(importedAs: "com.joshuaforster.ctrl.profile", conformingTo: .json)]
+            panel.nameFieldStringValue = ProfileFile.safeFilename(profile.name)
+            guard panel.runModal() == .OK, let url = panel.url else { return nil }
+            let encoder = JSONEncoder(); encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            try encoder.encode(valid).write(to: url, options: .atomic)
+            return url
+        } catch { transferError = error.localizedDescription; return nil }
     }
-
-    func importProfile(from url: URL) throws {
-        let data = try Data(contentsOf: url)
-        var profile = try JSONDecoder().decode(Profile.self, from: data)
-        profile.id = UUID()   // new ID to avoid collision
-        profiles.append(profile)
-        save()
+    @discardableResult func importProfile(from url: URL) throws -> UUID {
+        let access = url.startAccessingSecurityScopedResource()
+        defer { if access { url.stopAccessingSecurityScopedResource() } }
+        guard let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize, size <= ProfileFile.maximumBytes else { throw ProfileFileError.tooLarge }
+        let handle = try FileHandle(forReadingFrom: url)
+        defer { try? handle.close() }
+        var profile = try ProfileFile.decode(try handle.read(upToCount: ProfileFile.maximumBytes + 1) ?? Data())
+        guard profiles.count < 100 else { throw ProfileFileError.invalid }
+        profile.id = UUID()
+        profiles.append(profile); save(); return profile.id
     }
 }

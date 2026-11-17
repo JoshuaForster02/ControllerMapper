@@ -45,7 +45,7 @@ struct AboutView: View {
             .onTapGesture { registerIconTap() }
 
             VStack(spacing: 4) {
-                Text("ControllerMapper")
+                Text("Ctrl")
                     .font(.title2.bold())
                 Text("Version \(appVersion) (\(buildNumber))")
                     .font(.caption)
