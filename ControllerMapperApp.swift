@@ -9,14 +9,14 @@ struct ControllerMapperApp: App {
     var body: some Scene {
         // Menu bar popover
         MenuBarExtra {
-            MenuBarView()
+            MenuBarView().preferredColorScheme(.dark)
         } label: {
             MenuBarLabel()
         }
         .menuBarExtraStyle(.window)
 
         // Main settings window (opened via button in menu bar)
-        Window("Controller Mapper", id: "main-window") {
+        Window("Ctrl", id: "main-window") {
             MainWindowView()
                 .frame(minWidth: 780, minHeight: 520)
         }
@@ -35,14 +35,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let mappingEngine     = MappingEngine.shared   // wires up callbacks
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Request Accessibility permission for key/mouse injection
-        EventInjector.requestAccessibilityIfNeeded()
-
-        // Register as login item (macOS 13+)
-        try? SMAppService.mainApp.register()
-
-        // Request permission for the Konami-code easter egg notification.
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+        // Permissions and login items are explicit user choices, never requested at launch.
         NotificationCenter.default.addObserver(
             forName: .controllerMapperEasterEgg, object: nil, queue: .main
         ) { _ in
@@ -55,6 +48,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    func applicationWillTerminate(_ notification: Notification) {
+        mappingEngine.shutdown(); controllerManager.shutdown()
+    }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         false  // keep running as menu bar app
     }

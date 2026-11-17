@@ -12,11 +12,17 @@ final class MappingEngine: ObservableObject {
     private let profiles   = ProfileManager.shared
 
     private var movementTimer: Timer?
+    private var held = HeldInputs<ControllerButton, HeldOutput>()
+    private var cancellables: Set<AnyCancellable> = []
 
     /// Global kill switch — lets the user pause all key/mouse injection
     /// (e.g. while typing) without disconnecting the controller.
     @Published var isEnabled: Bool = true {
-        didSet { UserDefaults.standard.set(isEnabled, forKey: "cm_mapping_enabled") }
+        didSet {
+            UserDefaults.standard.set(isEnabled, forKey: "cm_mapping_enabled")
+            if isEnabled { startMovementTimer() }
+            else { movementTimer?.invalidate(); movementTimer = nil; releaseInputs() }
+        }
     }
 
     // MARK: - Easter Egg: Konami Code
@@ -40,7 +46,10 @@ final class MappingEngine: ObservableObject {
     private init() {
         isEnabled = UserDefaults.standard.object(forKey: "cm_mapping_enabled") as? Bool ?? true
         wireCallbacks()
-        startMovementTimer()
+        if isEnabled { startMovementTimer() }
+        controller.onInputReset = { [weak self] in self?.releaseInputs() }
+        profiles.$activeProfileID.dropFirst().removeDuplicates().sink { [weak self] _ in self?.releaseInputs() }.store(in: &cancellables)
+        profiles.$profiles.dropFirst().sink { [weak self] _ in self?.releaseInputs() }.store(in: &cancellables)
     }
 
     // MARK: - Wire Controller Callbacks
@@ -90,10 +99,11 @@ final class MappingEngine: ObservableObject {
 
         if viewHeld && menuHeld {
             guard profileHoldTimer == nil else { return }
-            DispatchQueue.main.async { [weak self] in
-                self?.profileHoldTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { _ in
-                    self?.cycleProfileViaController()
-                }
+            guard isEnabled else { return }
+            profileHoldTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { [weak self] _ in
+                guard let self, self.isEnabled, self.viewHeld, self.menuHeld else { return }
+                self.profileHoldTimer = nil
+                self.cycleProfileViaController()
             }
         } else {
             profileHoldTimer?.invalidate()
@@ -113,6 +123,10 @@ final class MappingEngine: ObservableObject {
     // MARK: - Button Handler
 
     private func handleButton(_ button: ControllerButton, pressed: Bool) {
+        if !pressed {
+            if let output = held.end(button) { emit(output, down: false) }
+            return
+        }
         guard isEnabled,
               let profile = profiles.activeProfile,
               let action = profile.mappings[button] else { return }
@@ -122,18 +136,16 @@ final class MappingEngine: ObservableObject {
         case .none: break
 
         case .keyPress:
-            injector.keyPress(keyCode: action.keyMapping.keyCode,
-                              modifiers: action.keyMapping.modifiers,
-                              down: pressed)
+            if let output = held.begin(button, output: .key(action.keyMapping.keyCode, action.keyMapping.modifiers)) { emit(output, down: true) }
 
         case .leftClick:
-            injector.mouseClick(button: .left, down: pressed)
+            if let output = held.begin(button, output: .mouse(0)) { emit(output, down: true) }
 
         case .rightClick:
-            injector.mouseClick(button: .right, down: pressed)
+            if let output = held.begin(button, output: .mouse(1)) { emit(output, down: true) }
 
         case .middleClick:
-            injector.mouseClick(button: .center, down: pressed)
+            if let output = held.begin(button, output: .mouse(2)) { emit(output, down: true) }
 
         case .scrollUp, .scrollDown, .scrollLeft, .scrollRight:
             guard pressed else { break }
@@ -159,9 +171,22 @@ final class MappingEngine: ObservableObject {
         }
     }
 
+    private func emit(_ output: HeldOutput, down: Bool) {
+        switch output {
+        case let .key(code, flags): injector.keyPress(keyCode: code, modifiers: flags, down: down)
+        case let .mouse(raw): if let button = CGMouseButton(rawValue: raw) { injector.mouseClick(button: button, down: down) }
+        }
+    }
+    func releaseInputs() {
+        for output in held.releaseAll() { emit(output, down: false) }
+        injector.releaseAll(); profileHoldTimer?.invalidate(); profileHoldTimer = nil
+        viewHeld = false; menuHeld = false; lastAxisScrollDate.removeAll()
+    }
+    func shutdown() { releaseInputs(); movementTimer?.invalidate(); movementTimer = nil; cancellables.removeAll() }
     // MARK: - Movement Timer (60 fps)
 
     private func startMovementTimer() {
+        movementTimer?.invalidate()
         movementTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
             self?.tickMovement()
         }
@@ -169,7 +194,7 @@ final class MappingEngine: ObservableObject {
     }
 
     private func tickMovement() {
-        guard isEnabled, let profile = profiles.activeProfile else { return }
+        guard isEnabled, controller.isConnected, EventInjector.isAccessibilityGranted, let profile = profiles.activeProfile else { return }
 
         // Left stick
         applyAxisMouse(
@@ -219,7 +244,7 @@ final class MappingEngine: ObservableObject {
         let scrollCooldown: TimeInterval = 0.08  // ≈12 events/sec max per axis
         let now = Date()
 
-        if let xa = xAction {
+        if let xa = xAction, [.scrollUp, .scrollDown, .scrollLeft, .scrollRight].contains(xa.type) {
             let elapsed = now.timeIntervalSince(lastAxisScrollDate[xButton] ?? .distantPast)
             if elapsed >= scrollCooldown {
                 let amt = xa.scrollAmount
@@ -227,7 +252,7 @@ final class MappingEngine: ObservableObject {
                 if xValue < -scrollThreshold { injector.scroll(dx: -amt, dy: 0); lastAxisScrollDate[xButton] = now }
             }
         }
-        if let ya = yAction {
+        if let ya = yAction, [.scrollUp, .scrollDown, .scrollLeft, .scrollRight].contains(ya.type) {
             let elapsed = now.timeIntervalSince(lastAxisScrollDate[yButton] ?? .distantPast)
             if elapsed >= scrollCooldown {
                 let amt = ya.scrollAmount

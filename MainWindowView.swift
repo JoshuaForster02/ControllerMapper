@@ -1,10 +1,15 @@
 import SwiftUI
+import Combine
 import UniformTypeIdentifiers
 
 struct MainWindowView: View {
     @ObservedObject private var controller = ControllerManager.shared
     @ObservedObject private var profiles   = ProfileManager.shared
 
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    @AppStorage("futuristicMotion") private var motionMode = "system"
+    private var reduceMotion: Bool { motionMode == "off" || (motionMode != "on" && systemReduceMotion) }
+    @ObservedObject private var engine = MappingEngine.shared
     @State private var selectedProfileID: UUID?
     @State private var selectedButton: ControllerButton?
     @State private var showNewProfileSheet = false
@@ -13,6 +18,7 @@ struct MainWindowView: View {
     @State private var showBluetoothPicker = false
     @State private var showAbout = false
     @State private var searchText = ""
+    @State private var transferError: String?
 
     private var activeProfile: Binding<Profile> {
         Binding(
@@ -45,8 +51,24 @@ struct MainWindowView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .navigationTitle("ControllerMapper")
+        .navigationTitle("Ctrl")
+        .preferredColorScheme(.dark)
         .toolbar { toolbarContent }
+        .safeAreaInset(edge: .bottom) {
+            HStack(spacing: 10) {
+                Circle().fill(controller.isConnected ? Color.cyan : .gray).frame(width: 5, height: 5)
+                Text(controller.isConnected ? controller.controllerName : "KEIN CONTROLLER").lineLimit(1)
+                Spacer()
+                Text(engine.isEnabled ? "MAPPING AKTIV" : "PAUSIERT")
+                Menu {
+                    Picker("Animationen", selection: $motionMode) {
+                        Text("Systemvorgabe").tag("system"); Text("Voll").tag("on"); Text("Reduziert").tag("off")
+                    }
+                } label: { Image(systemName: "sparkles") }.menuStyle(.borderlessButton).frame(width: 24).help("Animationen")
+                Text("CTRL 1.3").foregroundStyle(.tertiary)
+            }.font(.system(size: 9, weight: .medium, design: .monospaced)).tracking(1)
+                .padding(.horizontal, 16).padding(.vertical, 8).background(.ultraThinMaterial)
+        }
         .onAppear {
             if selectedProfileID == nil {
                 selectedProfileID = profiles.activeProfileID ?? profiles.profiles.first?.id
@@ -58,11 +80,18 @@ struct MainWindowView: View {
                 selectedProfileID = profile.id
             }
         }
-        .fileImporter(isPresented: $isImporting, allowedContentTypes: [.init(filenameExtension: "cmprofile")!]) { result in
-            if case .success(let url) = result {
-                try? profiles.importProfile(from: url)
+        .fileImporter(isPresented: $isImporting, allowedContentTypes: [UTType(importedAs: "com.joshuaforster.ctrl.profile", conformingTo: .json), .json]) { result in
+            do {
+                let url = try result.get(); selectedProfileID = try profiles.importProfile(from: url)
+            } catch {
+                let error = error as NSError
+                if !(error.domain == NSCocoaErrorDomain && error.code == NSUserCancelledError) { transferError = error.localizedDescription }
             }
         }
+        .onReceive(profiles.$transferError.compactMap { $0 }) { transferError = $0 }
+        .alert("Profil konnte nicht übertragen werden", isPresented: Binding(get: { transferError != nil }, set: { if !$0 { transferError = nil; profiles.transferError = nil } })) {
+            Button("OK") { transferError = nil; profiles.transferError = nil }
+        } message: { Text(transferError ?? "Unbekannter Fehler") }
         .sheet(isPresented: $showBluetoothPicker) {
             BluetoothDevicePickerView()
         }
@@ -184,7 +213,7 @@ struct MainWindowView: View {
                     .frame(minWidth: 320, idealWidth: 360, maxWidth: 460)
                 }
             }
-            .animation(.easeInOut(duration: 0.18), value: selectedButton)
+            .animation(reduceMotion ? nil : .spring(response: 0.32, dampingFraction: 0.8), value: selectedButton)
         }
     }
 
@@ -192,15 +221,8 @@ struct MainWindowView: View {
         VStack(spacing: 0) {
             // Profile header
             HStack(spacing: 12) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(profile.swiftUIColor.opacity(0.16))
-                        .frame(width: 36, height: 36)
-                    Image(systemName: profile.icon)
-                        .foregroundStyle(profile.swiftUIColor)
-                        .font(.headline)
-                }
-
+                SignalGlyph(symbol: profile.icon, active: controller.isConnected && engine.isEnabled, pulse: controller.pressedButtons.hashValue)
+                    .scaleEffect(0.68).frame(width: 38, height: 38)
                 Text(profile.name)
                     .font(.title3.bold())
 
@@ -328,9 +350,10 @@ struct MainWindowView: View {
                     profile: profile
                 )
                 .padding(20)
+                .background { CircuitBackdrop(emphasis: controller.isConnected ? 1 : 0.55) }
             }
             .frame(height: 240)
-            .animation(.easeInOut(duration: 0.4), value: profile.id)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: profile.id)
         }
     }
 
